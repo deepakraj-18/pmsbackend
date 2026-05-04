@@ -46,14 +46,16 @@ def search_milestones(
     db: Session = Depends(get_sync_db),
 ):
     from app.models.milestone import Milestone
-    from sqlalchemy import or_
+    from app.services.milestone_service import _batch_enrich_milestones
     stmt = (
         db.query(Milestone)
         .filter(Milestone.milestone_name.ilike(f"%{q}%"))
     )
     if project_id:
         stmt = stmt.filter(Milestone.project_id == project_id)
-    return stmt.limit(limit).all()
+    milestones = stmt.limit(limit).all()
+    _batch_enrich_milestones(db, milestones)
+    return milestones
 
 
 @router.get("/{milestone_id}", response_model=MilestoneResponse)
