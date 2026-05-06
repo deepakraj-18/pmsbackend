@@ -54,6 +54,19 @@ _MAPPINGS = {
     "ProjectStatus":       ["Active", "On Hold", "Completed", "Cancelled"],
     "TaskPriority":        ["Critical", "High", "Medium", "Low"],
     "IssueSeverity":       ["Critical", "High", "Medium", "Low"],
+    "ProjectBillingModel": ["Fixed Bid", "Time & Materials", "Internal", "Retainer"],
+    "ProjectType":         ["Client Project", "Internal Project", "Research", "Support"],
+}
+
+_UNIFIED_PROJECT_DEFS = {
+    "Fixed Bid":        {"label": "Fixed Bid",        "color": "#6366f1", "icon": "pi-wallet"},
+    "Time & Materials": {"label": "Time & Materials", "color": "#0ea5e9", "icon": "pi-clock"},
+    "Internal":         {"label": "Internal",         "color": "#64748b", "icon": "pi-home"},
+    "Retainer":         {"label": "Retainer",         "color": "#f59e0b", "icon": "pi-sync"},
+    "Client Project":   {"label": "Client Project",   "color": "#10b981", "icon": "pi-briefcase"},
+    "Internal Project": {"label": "Internal Project", "color": "#6366f1", "icon": "pi-building"},
+    "Research":         {"label": "Research",         "color": "#a855f7", "icon": "pi-search"},
+    "Support":          {"label": "Support",          "color": "#f97316", "icon": "pi-info-circle"},
 }
 
 REQUIRED_STATUSES = list(set(_MAPPINGS["TaskStatus"] + _MAPPINGS["IssueStatus"] + _MAPPINGS["ProjectStatus"] + ["Planning"]))
@@ -64,7 +77,15 @@ MASTER_LOOKUPS_SEED_DATA = []
 for category, keys in _MAPPINGS.items():
     for index, key in enumerate(keys, 1):
         is_status = "Status" in category
-        src = _UNIFIED_STATUS_DEFS if is_status else _UNIFIED_PRIORITIES
+        is_project = "Project" in category and category not in ["ProjectStatus"]
+        
+        if is_status:
+            src = _UNIFIED_STATUS_DEFS
+        elif is_project:
+            src = _UNIFIED_PROJECT_DEFS
+        else:
+            src = _UNIFIED_PRIORITIES
+            
         lookup = {
             "category": category,
             "value": key.replace(" ", "").replace("-", ""),
