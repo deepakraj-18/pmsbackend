@@ -37,7 +37,14 @@ def create_template(
     data: ProjectTemplateCreate,
     created_by_id: Optional[int] = None,
 ) -> ProjectTemplate:
+    from app.utils.ids import generate_public_id
+    
+    existing = db.execute(select(ProjectTemplate).where(ProjectTemplate.name == data.name, ProjectTemplate.is_deleted == False)).scalar_one_or_none()
+    if existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"A template with name '{data.name}' already exists.")
     db_template = ProjectTemplate(
+        public_id     = generate_public_id("TPL-"),
         name          = data.name,
         description   = data.description,
         billing_type  = data.billing_type,
@@ -74,7 +81,11 @@ def update_template(
     if not template:
         return None
 
-    if data.name is not None:
+    if data.name is not None and data.name != template.name:
+        existing = db.execute(select(ProjectTemplate).where(ProjectTemplate.name == data.name, ProjectTemplate.id != template_id, ProjectTemplate.is_deleted == False)).scalar_one_or_none()
+        if existing:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=f"A template with name '{data.name}' already exists.")
         template.name = data.name
     if data.description is not None:
         template.description = data.description

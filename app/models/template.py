@@ -10,7 +10,8 @@ class ProjectTemplate(AuditMixin, Base):
     __tablename__ = "project_templates"
 
     id           = Column(Integer, primary_key=True, index=True)
-    name         = Column(String(255), nullable=False, index=True)
+    public_id    = Column(String(50), unique=True, index=True, nullable=True)
+    name         = Column(String(255), nullable=False, index=True, unique=True)
     description  = Column(Text, nullable=True)
     billing_type = Column(String(50), nullable=True)
     is_public    = Column(Boolean, default=True, nullable=False)

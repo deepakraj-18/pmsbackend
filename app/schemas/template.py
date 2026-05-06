@@ -78,6 +78,7 @@ class CreatorResponse(BaseModel):
 
 class ProjectTemplateResponse(BaseModel):
     id: int
+    public_id: Optional[str] = None
     name: str
     description: Optional[str]        = None
     billing_type: Optional[str]       = None
