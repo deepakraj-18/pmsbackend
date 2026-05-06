@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -28,17 +27,14 @@ async def lifespan(app: FastAPI):
         try:
             ensure_database_exists()
             Base.metadata.create_all(bind=engine)
-            logger.info("Database schema verified/created.")
         except Exception as e:
             logger.error(f"Database setup failed: {e}")
     if settings.AUTO_SEED:
         try:
             seed_all(reset=False)
-            logger.info("Database auto-seeding completed.")
         except Exception as e:
             logger.error(f"Auto-seeding failed: {e}")
     yield
-    logger.info("Shutting down application...")
     engine.dispose()
 
 app = FastAPI(
@@ -52,17 +48,14 @@ app = FastAPI(
 
 add_exception_handlers(app)
 
-
 app.add_middleware(GZipMiddleware, minimum_size=settings.GZIP_MINIMUM_SIZE)
 
-
-if IS_PRODUCTION:
-    app.add_middleware(HTTPSRedirectMiddleware)
-
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.ALLOWED_HOSTS if not IS_PRODUCTION else ["*"],
-)
+# In production, we trust the proxy to handle HTTPS and Host validation
+if not IS_PRODUCTION:
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.ALLOWED_HOSTS,
+    )
 
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
@@ -82,7 +75,8 @@ app.add_middleware(ForceHTTPSMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=settings.BACKEND_CORS_ORIGINS or ["*"],
+    allow_origin_regex=r"https://.*\.azurestaticapps\.net",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
