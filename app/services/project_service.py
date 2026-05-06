@@ -47,6 +47,10 @@ def _compute_counts(db: Session, project_id: int) -> dict:
         )
     ).scalar() or 0
     
+    completed_task_count = db.execute(
+        select(func.count()).where(Task.project_id == project_id, Task.is_deleted == False, Task.completion_percentage == 100)
+    ).scalar() or 0
+
     issue_count = db.execute(
         select(func.count()).where(Issue.project_id == project_id, Issue.is_deleted == False)
     ).scalar() or 0
@@ -57,7 +61,7 @@ def _compute_counts(db: Session, project_id: int) -> dict:
         "task_count": task_count,
         "issue_count": issue_count,
         "milestone_count": milestone_count,
-        "completion_percentage": round(float(avg_completion)) if task_count > 0 else 0
+        "completion_percentage": round((completed_task_count / task_count) * 100) if task_count > 0 else 0
     }
 
 
@@ -76,12 +80,12 @@ def _batch_enrich_projects(db: Session, projects: List[Project]) -> None:
         select(
             Task.project_id, 
             func.count(Task.id),
-            func.avg(Task.completion_percentage)
+            func.sum(func.case((Task.completion_percentage == 100, 1), else_=0))
         ).where(Task.project_id.in_(project_ids), Task.is_deleted == False).group_by(Task.project_id)
     ).all()
     
     task_counts = {row[0]: row[1] for row in task_stats}
-    task_pcts = {row[0]: round(float(row[2] or 0)) for row in task_stats}
+    task_pcts = {row[0]: round((float(row[2] or 0) / float(row[1] or 1)) * 100) for row in task_stats}
     
     issue_counts = dict(db.execute(
         select(Issue.project_id, func.count()).where(Issue.project_id.in_(project_ids), Issue.is_deleted == False).group_by(Issue.project_id)

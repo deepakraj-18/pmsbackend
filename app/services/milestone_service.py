@@ -31,34 +31,18 @@ def _enrich_milestone(db: Session, milestone: Milestone) -> Milestone:
         select(func.count()).where(Task.milestone_id == milestone.id, Task.is_deleted == False)
     ).scalar() or 0
 
-    task_avg_pct = db.execute(
-        select(func.avg(Task.completion_percentage)).where(
-            Task.milestone_id == milestone.id, Task.is_deleted == False
+    completed_task_count = db.execute(
+        select(func.count()).where(
+            Task.milestone_id == milestone.id, Task.is_deleted == False, Task.completion_percentage == 100
         )
     ).scalar() or 0
 
     issue_stats = db.execute(
-        select(
-            func.count(Issue.id),
-            func.sum(
-                case(
-                    (MasterLookup.label.ilike('Closed'), 100),
-                    (MasterLookup.label.ilike('Resolved'), 100),
-                    else_=0
-                )
-            )
-        )
-        .select_from(Issue)
-        .outerjoin(MasterLookup, Issue.status_id == MasterLookup.id)
-        .where(Issue.milestone_id == milestone.id)
-    ).first()
+        select(func.count(Issue.id)).where(Issue.milestone_id == milestone.id, Issue.is_deleted == False)
+    ).scalar() or 0
 
-    issue_count = issue_stats[0] if issue_stats else 0
-    issue_sum_pct = float(issue_stats[1]) if issue_stats and issue_stats[1] else 0.0
-
-    total_items = task_count + issue_count
-    task_sum_pct = float(task_avg_pct) * task_count
-    total_pct = round((task_sum_pct + issue_sum_pct) / total_items) if total_items > 0 else 0
+    issue_count = issue_stats or 0
+    total_pct = round((completed_task_count / task_count) * 100) if task_count > 0 else 0
 
     milestone.__dict__['task_count'] = task_count
     milestone.__dict__['issue_count'] = issue_count
@@ -70,52 +54,31 @@ def _batch_enrich_milestones(db: Session, milestones: List[Milestone]) -> None:
         return
     milestone_ids = [m.id for m in milestones]
 
-    task_counts = dict(db.execute(
-        select(Task.milestone_id, func.count()).where(Task.milestone_id.in_(milestone_ids), Task.is_deleted == False).group_by(Task.milestone_id)
-    ).all())
-
-    task_avg_pcts = dict(db.execute(
-        select(Task.milestone_id, func.avg(Task.completion_percentage)).where(
-            Task.milestone_id.in_(milestone_ids), Task.is_deleted == False
-        ).group_by(Task.milestone_id)
-    ).all())
-
-    from app.models.master import MasterLookup
-    from sqlalchemy import case
-    
-    issue_stats = db.execute(
+    task_stats = db.execute(
         select(
-            Issue.milestone_id,
-            func.count(Issue.id),
-            func.sum(
-                case(
-                    (MasterLookup.label.ilike('Closed'), 100),
-                    (MasterLookup.label.ilike('Resolved'), 100),
-                    else_=0
-                )
-            )
-        )
-        .select_from(Issue)
-        .outerjoin(MasterLookup, Issue.status_id == MasterLookup.id)
-        .where(Issue.milestone_id.in_(milestone_ids))
-        .group_by(Issue.milestone_id)
+            Task.milestone_id, 
+            func.count(Task.id),
+            func.sum(func.case((Task.completion_percentage == 100, 1), else_=0))
+        ).where(Task.milestone_id.in_(milestone_ids), Task.is_deleted == False).group_by(Task.milestone_id)
     ).all()
 
-    issue_counts_dict = {row[0]: row[1] for row in issue_stats}
-    issue_sum_pct_dict = {row[0]: float(row[2]) if row[2] else 0.0 for row in issue_stats}
+    task_counts = {row[0]: row[1] for row in task_stats}
+    task_completed_counts = {row[0]: row[2] or 0 for row in task_stats}
+
+    issue_counts_dict = dict(db.execute(
+        select(Issue.milestone_id, func.count(Issue.id))
+        .where(Issue.milestone_id.in_(milestone_ids), Issue.is_deleted == False)
+        .group_by(Issue.milestone_id)
+    ).all())
 
     for m in milestones:
         t_count = task_counts.get(m.id, 0)
+        t_completed = task_completed_counts.get(m.id, 0)
         i_count = issue_counts_dict.get(m.id, 0)
-        t_avg_pct = float(task_avg_pcts.get(m.id, 0.0) or 0.0)
         
-        t_sum = t_avg_pct * t_count
-        i_sum = issue_sum_pct_dict.get(m.id, 0.0)
-        
-        tot_items = t_count + i_count
         m.__dict__['task_count'] = t_count
         m.__dict__['issue_count'] = i_count
-        m.__dict__['completion_percentage'] = round((t_sum + i_sum) / tot_items) if tot_items > 0 else 0
+        m.__dict__['completion_percentage'] = round((t_completed / t_count) * 100) if t_count > 0 else 0
 
 
 def get_milestone(db: Session, milestone_id: int) -> Optional[Milestone]:

@@ -85,7 +85,11 @@ def read_document(document_id: int, db: Session = Depends(get_sync_db)):
     return db_document
 
 @router.get("/{document_id}/download")
-def download_document(document_id: int, db: Session = Depends(get_sync_db)):
+def download_document(
+    document_id: int, 
+    inline: bool = Query(False),
+    db: Session = Depends(get_sync_db)
+):
     db_document = document_service.get_document(db, document_id=document_id)
     if db_document is None:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -95,10 +99,12 @@ def download_document(document_id: int, db: Session = Depends(get_sync_db)):
         props = azure_blob_service.get_blob_properties(db_document.file_url)
         media_type = props.content_settings.content_type or "application/octet-stream"
         
+        disposition = "inline" if inline else "attachment"
+        
         return StreamingResponse(
             blob_chunks, 
             media_type=media_type,
-            headers={"Content-Disposition": f'attachment; filename="{db_document.title}"'}
+            headers={"Content-Disposition": f'{disposition}; filename="{db_document.title}"'}
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"File not found in storage: {str(e)}")
