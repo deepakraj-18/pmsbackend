@@ -341,19 +341,42 @@ def update_project(
                 ))
 
 
-        owner_id = db_project.owner_id
         for m in existing_members:
-            if m.user_id not in new_user_ids and m.user_id != owner_id:
+            if m.user_id not in new_user_ids and m.user_id != db_project.owner_id:
                 db.delete(m)
+
+    roles_to_ensure = []
+    if db_project.owner_id:
+        roles_to_ensure.append({"uid": db_project.owner_id, "profile": "Project Lead", "portal": "Administrator", "is_owner": True})
+    if db_project.project_manager_id:
+        roles_to_ensure.append({"uid": db_project.project_manager_id, "profile": "Project Manager", "portal": "Administrator", "is_owner": False})
+    if db_project.delivery_head_id:
+        roles_to_ensure.append({"uid": db_project.delivery_head_id, "profile": "Delivery Head", "portal": "Administrator", "is_owner": False})
+
+    for r in roles_to_ensure:
+        existing = db.execute(
+            select(ProjectMember).where(ProjectMember.project_id == project_id, ProjectMember.user_id == r["uid"])
+        ).scalar_one_or_none()
+        
+        if not existing:
+            db.add(ProjectMember(
+                project_id      = project_id,
+                user_id         = r["uid"],
+                project_profile = r["profile"],
+                portal_profile  = r["portal"],
+                is_owner        = r["is_owner"],
+                is_processed    = False
+            ))
+        else:
+            if r["is_owner"]: 
+                existing.is_owner = True
+            if existing.project_profile == "Member" and r["profile"] != "Member":
+                existing.project_profile = r["profile"]
+                existing.portal_profile = r["portal"]
 
     write_audit(db, actor_id, "UPDATE", "projects", project_id, project_id, changes)
     db.commit()
     return get_project(db, project_id)
-
-
-
-
-
 
 
 def delete_project(
@@ -377,9 +400,6 @@ def delete_project(
 
 
 
-
-
-
 def archive_project(
     db: Session,
     project_id: int,
@@ -398,10 +418,6 @@ def archive_project(
     )
     db.commit()
     return get_project(db, project_id)
-
-
-
-
 
 
 def sync_project_fields(
@@ -423,10 +439,6 @@ def sync_project_fields(
     write_audit(db, actor_id or "sync", "UPDATE", "projects", project_id, project_id, changes)
     db.commit()
     return get_project(db, project_id)
-
-
-
-
 
 
 def add_project_member(
