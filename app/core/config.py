@@ -1,4 +1,5 @@
-from typing import Optional, Union, List
+import logging
+from typing import Optional, Union, List, Any
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -42,6 +43,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Roles & Profiles
     ROLE_SUPER_ADMIN: str = "Super Admin"
     ROLE_ADMIN: str = "Admin"
     ROLE_TEAM_LEAD: str = "Team Lead"
@@ -51,47 +53,32 @@ class Settings(BaseSettings):
     PROFILE_DEVELOPER: str = "Developer"
     PROFILE_MEMBER: str = "Member"
 
-    BACKEND_CORS_ORIGINS: Union[list[str], str] = Field(default=[])
+    BACKEND_CORS_ORIGINS: Union[list[str], str] = Field(default=["*"])
     CORS_ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    CORS_ALLOW_HEADERS: List[str] = [
-        "Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With",
-        "ConsistencyLevel", "X-Forwarded-For", "X-Forwarded-Proto"
-    ]
+    CORS_ALLOW_HEADERS: List[str] = ["*"]
     CORS_EXPOSE_HEADERS: List[str] = ["Content-Disposition"]
-
-    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    @classmethod
-    def assemble_cors_origins(cls, v: Union[str, list[str]]) -> list[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, str) and v.startswith("["):
-            from json import loads
-            return loads(v)
-        elif isinstance(v, list):
-            return v
-        return v
-
     ALLOWED_HOSTS: Union[list[str], str] = Field(default=["*"])
 
-    @field_validator("ALLOWED_HOSTS", mode="before")
+    @field_validator("BACKEND_CORS_ORIGINS", "ALLOWED_HOSTS", "PROXY_TRUSTED_HOSTS", mode="before")
     @classmethod
-    def assemble_allowed_hosts(cls, v: Union[str, list[str]]) -> list[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, str) and v.startswith("["):
-            from json import loads
-            return loads(v)
-        elif isinstance(v, list):
-            return v
-        return v
+    def assemble_list(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            if v.startswith("["):
+                try:
+                    import json
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        if isinstance(v, list):
+            return [str(i) for i in v]
+        return v or []
 
-    PROXY_TRUSTED_HOSTS: str = Field(default="127.0.0.1")
+    PROXY_TRUSTED_HOSTS: Union[list[str], str] = Field(default="127.0.0.1")
 
-    # App Settings
     GZIP_MINIMUM_SIZE: int = 1024
     APP_PORT: int = 8000
 
-    # Azure / Microsoft
     MS_LOGIN_BASE_URL: str = "https://login.microsoftonline.com"
     MS_GRAPH_BASE_URL: str = "https://graph.microsoft.com"
     MS_AUTH_SCOPES: str = "openid profile email User.Read"
@@ -110,4 +97,8 @@ class Settings(BaseSettings):
         populate_by_name=True,
     )
 
-settings = Settings()
+try:
+    settings = Settings()
+except Exception as e:
+    print(f"CRITICAL: Settings failed to load: {e}")
+    settings = Settings(_env_file=None)
