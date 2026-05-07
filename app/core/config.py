@@ -53,12 +53,9 @@ class Settings(BaseSettings):
     PROFILE_DEVELOPER: str = "Developer"
     PROFILE_MEMBER: str = "Member"
 
-    BACKEND_CORS_ORIGINS: Union[list[str], str] = Field(default=[])
+    BACKEND_CORS_ORIGINS: Union[list[str], str] = Field(default=["*"])
     CORS_ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    CORS_ALLOW_HEADERS: List[str] = [
-        "Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With",
-        "ConsistencyLevel", "X-Forwarded-For", "X-Forwarded-Proto"
-    ]
+    CORS_ALLOW_HEADERS: List[str] = ["*"]
     CORS_EXPOSE_HEADERS: List[str] = ["Content-Disposition"]
     ALLOWED_HOSTS: Union[list[str], str] = Field(default=["*"])
 
@@ -103,6 +100,5 @@ class Settings(BaseSettings):
 try:
     settings = Settings()
 except Exception as e:
-    # Extreme fallback to prevent 503
     print(f"CRITICAL: Settings failed to load: {e}")
-    settings = Settings(_env_file=None) # type: ignore
+    settings = Settings(_env_file=None)
