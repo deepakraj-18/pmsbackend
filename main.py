@@ -38,8 +38,7 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not IS_PRODUCTION:
-        Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     yield
     engine.dispose()
 

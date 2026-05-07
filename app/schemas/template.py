@@ -34,17 +34,15 @@ class TemplateTaskUpdate(BaseModel):
 
 class TemplateTaskResponse(BaseModel):
     id: int
-    title: str
+    title: Optional[str] = None
     description: Optional[str]       = None
     estimated_hours: Optional[float] = None
     duration: Optional[int]          = None
     billing_type: Optional[str]      = None
     tags: Optional[str]              = None
-    order_index: int
+    order_index: int                 = 0
 
     model_config = ConfigDict(from_attributes=True)
-
-
 
 
 class ProjectTemplateCreate(BaseModel):
@@ -79,7 +77,7 @@ class CreatorResponse(BaseModel):
 class ProjectTemplateResponse(BaseModel):
     id: int
     public_id: Optional[str] = None
-    name: str
+    name: Optional[str] = None
     description: Optional[str]        = None
     billing_type: Optional[str]       = None
     is_public: bool                   = True

@@ -78,7 +78,11 @@ def _batch_enrich_milestones(db: Session, milestones: List[Milestone]) -> None:
         
         m.__dict__['task_count'] = t_count
         m.__dict__['issue_count'] = i_count
-        m.__dict__['completion_percentage'] = round((t_completed / t_count) * 100) if t_count > 0 else 0
+        
+        if t_count and t_count > 0:
+            m.__dict__['completion_percentage'] = round((float(t_completed) / float(t_count)) * 100)
+        else:
+            m.__dict__['completion_percentage'] = 0
 
 
 def get_milestone(db: Session, milestone_id: int) -> Optional[Milestone]:
