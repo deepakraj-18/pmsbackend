@@ -22,6 +22,7 @@ from app.schemas.project import (
     ProjectMemberCreate,
     ProjectMemberResponse,
     ProjectSyncUpdate,
+    ProjectListResponse,
 )
 from app.schemas.task import TaskResponse, TaskListResponse
 from app.schemas.issue import IssueResponse, IssueListResponse

@@ -11,10 +11,6 @@ from app.schemas.document import DocumentResponse
 from app.schemas.base import BaseSchema
 
 
-
-
-
-
 class ProjectMemberResponse(BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,10 +50,6 @@ class ProjectMemberUpdate(BaseModel):
 
     previous_invitation_status_id: Optional[int]   = None
     is_processed: Optional[bool]                = None
-
-
-
-
 
 
 class ProjectCreate(BaseModel):
