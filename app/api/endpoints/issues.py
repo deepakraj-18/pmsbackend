@@ -62,7 +62,11 @@ def read_issues(
     skip: int = 0,
     limit: int = 100,
     project_id: Optional[int] = None,
+    status_id: Optional[List[int]] = Query(None),
+    priority_id: Optional[List[int]] = Query(None),
+    severity_id: Optional[List[int]] = Query(None),
     assignee_email: Optional[List[str]] = Query(None),
+    search: Optional[str] = None,
     db: Session = Depends(get_sync_db),
     current_user=Depends(allow_authenticated),
 ):
@@ -75,7 +79,11 @@ def read_issues(
         skip=skip,
         limit=limit,
         project_id=project_id,
+        status_ids=status_id,
+        priority_ids=priority_id,
+        severity_ids=severity_id,
         assignee_emails=assignee_email,
+        search=search,
     )
 
 

@@ -71,40 +71,40 @@ class TaskUpdate(BaseModel):
 class ProjectMin(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    project_name: str
+    project_name: Optional[str] = None
     customer_name: Optional[str] = None
     account_name: Optional[str] = None
 
 class TaskListMin(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    name: str
+    name: Optional[str] = None
 
 class MilestoneMin(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    milestone_name: str
+    milestone_name: Optional[str] = None
 
 class TaskResponse(BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    public_id: str
-    task_name: str
-    description: Optional[str]
+    public_id: Optional[str] = None
+    task_name: Optional[str] = None
+    description: Optional[str] = None
 
-    project_id: Optional[int]
+    project_id: Optional[int] = None
     project: Optional[ProjectMin] = None
 
-    task_list_id: Optional[int]
+    task_list_id: Optional[int] = None
     task_list: Optional[TaskListMin] = None
     milestone_id: Optional[int] = None
     milestone: Optional[MilestoneMin] = None
-    associated_team_id: Optional[int]
+    associated_team_id: Optional[int] = None
 
-    assignee_id: Optional[int]
-    owner_id: Optional[int]
-    created_by_id: Optional[int]
+    assignee_id: Optional[int] = None
+    owner_id: Optional[int] = None
+    created_by_id: Optional[int] = None
 
     status_id: Optional[int] = None
     priority_id: Optional[int] = None
@@ -116,23 +116,23 @@ class TaskResponse(BaseSchema):
     status: Optional[dict] = None
     priority: Optional[dict] = None
     
-    tags: Optional[str]
+    tags: Optional[str] = None
 
-    start_date: Optional[date]
-    due_date: Optional[date]
-    completion_date: Optional[date]
-    duration: Optional[int]
-    completion_percentage: Optional[int]
+    start_date: Optional[date] = None
+    due_date: Optional[date] = None
+    completion_date: Optional[date] = None
+    duration: Optional[int] = None
+    completion_percentage: Optional[int] = 0
 
-    estimated_hours: Optional[float]
-    work_hours: Optional[float]
-    billing_type: str
+    estimated_hours: Optional[float] = 0.0
+    work_hours: Optional[float] = 0.0
+    billing_type: Optional[str] = "Billable"
 
     is_processed: bool                  = False
     previous_status_id: Optional[int]   = None
 
-    timelog_total: float
-    difference: float
+    timelog_total: Optional[float] = 0.0
+    difference: Optional[float] = 0.0
 
     assignee: Optional[UserBase]     = None
     single_owner: Optional[UserBase] = None

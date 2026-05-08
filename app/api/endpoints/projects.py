@@ -129,24 +129,32 @@ def search_projects(
     return project_service.search_projects(db, query=q, limit=limit)
 
 
-@router.get("/", response_model=List[ProjectResponse])
+@router.get("/", response_model=ProjectListResponse)
 def read_projects(
     skip: int = 0,
     limit: int = 100,
     is_archived: Optional[bool] = Query(None),
     is_template: Optional[bool] = Query(None),
     include_all: bool = Query(True),
+    status_id: Optional[List[int]] = Query(None),
+    priority_id: Optional[List[int]] = Query(None),
+    manager_emails: Optional[List[str]] = Query(None),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_sync_db),
     current_user=Depends(allow_authenticated),
 ):
     return project_service.get_projects(
         db,
-        skip         = skip,
-        limit        = limit,
-        is_archived  = is_archived,
-        is_template  = is_template,
-        include_all  = include_all,
-        current_user = current_user if is_employee_only(current_user) else None,
+        skip=skip,
+        limit=limit,
+        status_ids=status_id,
+        priority_ids=priority_id,
+        manager_emails=manager_emails,
+        is_archived=is_archived,
+        is_template=is_template,
+        include_all=include_all,
+        search=search,
+        current_user=current_user if is_employee_only(current_user) else None,
     )
 
 

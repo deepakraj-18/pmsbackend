@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, case
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.project import Project, ProjectMember
@@ -20,19 +20,19 @@ from app.utils.audit_utils import capture_audit_details, write_audit
 
 
 
+def _project_query_options():
+    return [
+        selectinload(Project.owner).selectinload(User.role),
+        selectinload(Project.project_manager).selectinload(User.role),
+        selectinload(Project.delivery_head).selectinload(User.role),
+        selectinload(Project.source_template),
+        selectinload(Project.team_members).selectinload(ProjectMember.user).selectinload(User.role),
+        selectinload(Project.status_master),
+        selectinload(Project.priority_master),
+    ]
+
 def _project_query(extra_options=()):
-    
-    return (
-        select(Project)
-        .options(
-            selectinload(Project.owner).selectinload(User.role),
-            selectinload(Project.project_manager).selectinload(User.role),
-            selectinload(Project.delivery_head).selectinload(User.role),
-            selectinload(Project.source_template),
-            selectinload(Project.team_members).selectinload(ProjectMember.user).selectinload(User.role),
-            *extra_options,
-        )
-    )
+    return select(Project).options(*_project_query_options(), *extra_options)
 
 
 def _compute_counts(db: Session, project_id: int) -> dict:
@@ -80,7 +80,7 @@ def _batch_enrich_projects(db: Session, projects: List[Project]) -> None:
         select(
             Task.project_id, 
             func.count(Task.id),
-            func.sum(func.case((Task.completion_percentage == 100, 1), else_=0))
+            func.sum(case((Task.completion_percentage == 100, 1), else_=0))
         ).where(Task.project_id.in_(project_ids), Task.is_deleted == False).group_by(Task.project_id)
     ).all()
     
@@ -129,10 +129,27 @@ def get_projects(
     is_archived: Optional[bool] = None,
     is_template: Optional[bool] = None,
     include_all: bool = False,
+    search: Optional[str] = None,
     current_user=None,
-) -> List[Project]:
-    stmt = _project_query().where(Project.is_deleted == False)
+) -> dict:
+    stmt = select(Project).where(Project.is_deleted == False)
 
+    if search:
+        q = f"%{search}%"
+        stmt = stmt.where(
+            or_(
+                Project.project_name.ilike(q),
+                Project.public_id.ilike(q),
+                Project.project_id_sync.ilike(q),
+                Project.customer_name.ilike(q),
+                Project.client_name.ilike(q),
+            )
+        )
+
+    if status_ids:
+        stmt = stmt.where(Project.status_id.in_(status_ids))
+    if priority_ids:
+        stmt = stmt.where(Project.priority_id.in_(priority_ids))
 
     if current_user is not None:
         stmt = stmt.join(ProjectMember, ProjectMember.project_id == Project.id).where(
@@ -151,10 +168,16 @@ def get_projects(
             .where(User.email.in_(manager_emails))
         )
 
-    result = db.execute(stmt.offset(skip).limit(limit))
+    # Count before adding pagination and eager loading
+    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
+    
+    # Add eager loading and pagination
+    stmt = stmt.options(*_project_query_options()).offset(skip).limit(limit)
+    
+    result = db.execute(stmt)
     projects = list(result.scalars().unique().all())
     _batch_enrich_projects(db, projects)
-    return projects
+    return {"total": total, "items": projects}
 
 
 def search_projects(

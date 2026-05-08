@@ -164,16 +164,16 @@ class ProjectResponse(BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    public_id: str
-    project_id_sync: str
-    account_name: str
-    project_name: str
-    customer_name: str
+    public_id: Optional[str] = None
+    project_id_sync: Optional[str] = None
+    account_name: Optional[str] = None
+    project_name: Optional[str] = None
+    customer_name: Optional[str] = None
     client_name: Optional[str] = None
     tags: Optional[str]        = None
 
-    billing_model: str
-    project_type: str
+    billing_model: Optional[str] = None
+    project_type: Optional[str] = None
     project_status_external: Optional[str] = None
 
     expected_start_date: Optional[date] = None

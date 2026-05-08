@@ -45,14 +45,29 @@ def get_issues(
     project_id: Optional[int] = None,
     status_ids: Optional[List[int]] = None,
     priority_ids: Optional[List[int]] = None,
+    severity_ids: Optional[List[int]] = None,
     assignee_emails: Optional[List[str]] = None,
+    search: Optional[str] = None,
 ) -> dict:
     stmt = _issue_query()
 
     if project_id is not None:
         stmt = stmt.where(Issue.project_id == project_id)
 
+    if status_ids:
+        stmt = stmt.where(Issue.status_id.in_(status_ids))
 
+    if priority_ids:
+        stmt = stmt.where(Issue.priority_id.in_(priority_ids))
+
+    if severity_ids:
+        stmt = stmt.where(Issue.severity_id.in_(severity_ids))
+
+    if search:
+        q = f"%{search}%"
+        stmt = stmt.where(
+            or_(Issue.bug_name.ilike(q), Issue.public_id.ilike(q))
+        )
 
     if assignee_emails:
         stmt = stmt.join(User, User.id == Issue.assignee_id).where(
