@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.user import UserBase
 from app.schemas.masters import MasterLookupResponse
 from app.schemas.document import DocumentResponse
+from app.schemas.milestone import MilestoneResponse
 from app.schemas.base import BaseSchema
 
 
@@ -54,8 +55,6 @@ class IssueUpdate(BaseModel):
     milestone_id: Optional[int] = None
     assignee_id: Optional[int] = None
     reporter_id: Optional[int] = None
-
-    # Convenience email lists for M2M relationships
     assignee_emails: Optional[List[str]] = None
     follower_emails: Optional[List[str]] = None
 
@@ -84,7 +83,7 @@ class IssueUpdate(BaseModel):
 class ProjectMin(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    project_name: str
+    project_name: Optional[str] = None
     customer_name: Optional[str] = None
     account_name: Optional[str] = None
 
@@ -92,15 +91,15 @@ class IssueResponse(BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    public_id: str
-    bug_name: str
-    description: Optional[str]
+    public_id: Optional[str] = None
+    bug_name: Optional[str] = None
+    description: Optional[str] = None
 
-    project_id: Optional[int]
+    project_id: Optional[int] = None
     project: Optional[ProjectMin] = None
 
     milestone_id: Optional[int] = None
-    milestone: Optional[dict] = None
+    milestone: Optional[MilestoneResponse] = None
     associated_team_id: Optional[int]
     assignee_id: Optional[int]
     reporter_id: Optional[int]
@@ -119,16 +118,16 @@ class IssueResponse(BaseSchema):
     severity: Optional[dict] = None
     classification: Optional[dict] = None
 
-    module: Optional[str]
-    tags: Optional[str]
+    module: Optional[str] = None
+    tags: Optional[str] = None
     flag: Optional[str] = None
-    reproducible_flag: bool
+    reproducible_flag: bool = True
 
-    start_date: Optional[date]
-    due_date: Optional[date]
-    last_closed_time: Optional[datetime]
+    start_date: Optional[date] = None
+    due_date: Optional[date] = None
+    last_closed_time: Optional[datetime] = None
     last_modified_time: Optional[datetime] = None
-    estimated_hours: Optional[float]
+    estimated_hours: Optional[float] = None
 
     is_processed: bool                  = False
     previous_status_id: Optional[int]   = None
