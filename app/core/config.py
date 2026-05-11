@@ -44,8 +44,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Roles & Profiles
-    ROLE_SUPER_ADMIN: str = "Super Admin"
     ROLE_ADMIN: str = "Admin"
     ROLE_TEAM_LEAD: str = "Team Lead"
     ROLE_EMPLOYEE: str = "Employee"

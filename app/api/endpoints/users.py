@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_sync_db
-from app.core.security import get_current_user, allow_authenticated, allow_pm, is_employee_only
+from app.core.security import get_current_user, allow_authenticated, allow_pm, is_employee_only, allow_role_manage
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserListResponse
 from app.services import user_service
@@ -29,7 +29,7 @@ def search_users(
 def create_user(
     user: UserCreate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_pm),
+    current_user=Depends(allow_role_manage),
 ):
     if user_service.get_user_by_email(db, email=user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -77,7 +77,7 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_pm),
+    current_user=Depends(allow_role_manage),
 ):
     success = user_service.delete_user(db, user_id=user_id, actor_id=current_user.o365_id or str(current_user.id))
     if not success:

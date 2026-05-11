@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_sync_db
-from app.core.security import allow_authenticated, allow_team_lead_plus
+from app.core.security import allow_authenticated, allow_team_lead_plus, allow_milestone_create, allow_milestone_view, allow_milestone_edit
 from app.core.dependencies import auto_populate_milestone
 from app.schemas.milestone import MilestoneCreate, MilestoneResponse, MilestoneUpdate
 from app.services import milestone_service
@@ -14,7 +14,7 @@ router = APIRouter(dependencies=[Depends(allow_authenticated)])
 def create_milestone(
     milestone: MilestoneCreate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_milestone_create),
 ):
 
     auto_populate_milestone(milestone, current_user)
@@ -73,7 +73,7 @@ def update_milestone(
     milestone_id: int,
     milestone_in: MilestoneUpdate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_milestone_edit),
 ):
     updated = milestone_service.update_milestone(
         db,

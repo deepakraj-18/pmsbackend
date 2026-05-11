@@ -81,7 +81,7 @@ def seed_master_lookups(db: Session):
     logger.info(f"MasterLookups: {total_inserted} inserted, {total_skipped} already exist.")
 
 def seed_roles(db: Session):
-    canonical_roles = ["Super Admin", "Admin", "Team Lead", "Project Manager", "Employee"]
+    canonical_roles = ["Admin", "Team Lead", "Project Manager", "Employee"]
     for r_name in canonical_roles:
         role = db.query(Role).filter(Role.name == r_name).first()
         if not role:

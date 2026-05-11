@@ -11,6 +11,9 @@ from app.core.security import (
     allow_authenticated,
     allow_pm,
     allow_team_lead_plus,
+    allow_proj_create,
+    allow_proj_view,
+    allow_role_manage,
     check_project_owner_or_pm,
     check_project_owner_or_lead,
     is_employee_only,
@@ -47,7 +50,7 @@ def create_project_endpoint(
     project: ProjectCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_pm),
+    current_user=Depends(allow_proj_create),
 ):
 
     if not project.owner_id:
@@ -142,7 +145,7 @@ def read_projects(
     manager_emails: Optional[List[str]] = Query(None),
     search: Optional[str] = Query(None),
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_proj_view),
 ):
     return project_service.get_projects(
         db,
@@ -163,7 +166,7 @@ def read_projects(
 def read_project(
     project_id: int,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_proj_view),
 ):
     db_project = project_service.get_project(db, project_id=project_id)
     if db_project is None:
@@ -252,7 +255,7 @@ def sync_project(
     project_id: int,
     sync_data: ProjectSyncUpdate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_pm),
+    current_user=Depends(allow_proj_create),
 ):
     result = project_service.sync_project_fields(
         db,

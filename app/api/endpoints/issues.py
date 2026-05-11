@@ -3,18 +3,18 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_sync_db
-from app.core.security import allow_authenticated, allow_team_lead_plus, is_employee_only
+from app.core.security import allow_authenticated, allow_team_lead_plus, is_employee_only, allow_issue_create, allow_issue_view, allow_issue_delete
 from app.schemas.issue import IssueCreate, IssueUpdate, IssueResponse, IssueListResponse
 from app.services import issue_service
 
 router = APIRouter(dependencies=[Depends(allow_authenticated)])
 
 
-@router.post("/", response_model=IssueResponse, dependencies=[Depends(allow_team_lead_plus)])
+@router.post("/", response_model=IssueResponse, dependencies=[Depends(allow_issue_create)])
 def create_issue(
     issue: IssueCreate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_team_lead_plus),
+    current_user=Depends(allow_issue_create),
 ):
 
     if not issue.reporter_id:
@@ -31,7 +31,7 @@ def create_issue(
 def bulk_create_issues(
     issues: List[IssueCreate],
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_team_lead_plus),
+    current_user=Depends(allow_issue_create),
 ):
     results = []
     for i in issues:
@@ -68,7 +68,7 @@ def read_issues(
     assignee_email: Optional[List[str]] = Query(None),
     search: Optional[str] = None,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_issue_view),
 ):
 
     if is_employee_only(current_user):
@@ -91,7 +91,7 @@ def read_issues(
 def read_issue(
     issue_id: int,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_issue_view),
 ):
     db_issue = issue_service.get_issue(db, issue_id=issue_id)
     if db_issue is None:
@@ -110,7 +110,7 @@ def update_issue(
     issue_id: int,
     issue: IssueUpdate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_issue_view),
 ):
     db_issue = issue_service.get_issue(db, issue_id=issue_id)
     if db_issue is None:
@@ -131,11 +131,11 @@ def update_issue(
     return updated
 
 
-@router.delete("/{issue_id}", status_code=204, dependencies=[Depends(allow_team_lead_plus)])
+@router.delete("/{issue_id}", status_code=204, dependencies=[Depends(allow_issue_delete)])
 def delete_issue(
     issue_id: int,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_team_lead_plus),
+    current_user=Depends(allow_issue_delete),
 ):
     success = issue_service.delete_issue(
         db,

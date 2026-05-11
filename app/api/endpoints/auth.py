@@ -26,7 +26,7 @@ def _build_token_response(user: User) -> TokenResponse:
     )
     refresh_token = create_refresh_token(subject=user.id)
     
-    role_data = {"id": user.role.id, "name": user.role.name} if user.role else None
+    role_data = {"id": user.role.id, "name": user.role.name, "permissions": user.role.permissions} if user.role else None
     return TokenResponse(
         access_token  = access_token,
         refresh_token = refresh_token,
@@ -130,7 +130,7 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
         "first_name":   current_user.first_name,
         "last_name":    current_user.last_name,
         "display_name": current_user.display_name,
-        "role":         {"id": current_user.role.id, "name": current_user.role.name} if current_user.role else None,
+        "role":         {"id": current_user.role.id, "name": current_user.role.name, "permissions": current_user.role.permissions} if current_user.role else None,
         "is_external":  current_user.is_external,
         "is_synced":    current_user.is_synced,
     }

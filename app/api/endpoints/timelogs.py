@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_sync_db
-from app.core.security import allow_authenticated, allow_team_lead_plus, is_employee_only
+from app.core.security import allow_authenticated, allow_team_lead_plus, is_employee_only, allow_time_create, allow_time_view
 from app.core.dependencies import auto_populate_timelog
 from app.schemas.timelog import TimeLogCreate, TimeLogUpdate, TimeLogResponse, TimeLogBulkCreate
 from app.services import timelog_service
@@ -15,7 +15,7 @@ router = APIRouter(dependencies=[Depends(allow_authenticated)])
 def create_timelog(
     timelog: TimeLogCreate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_time_create),
 ):
 
     auto_populate_timelog(timelog, current_user)
@@ -34,7 +34,7 @@ def create_timelog(
 def create_timelogs_bulk(
     bulk: TimeLogBulkCreate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_time_create),
 ):
     for log in bulk.logs:
         auto_populate_timelog(log, current_user)
@@ -56,7 +56,7 @@ def read_timelogs(
     issue_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 100,
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_time_view),
     db: Session = Depends(get_sync_db),
 ):
     return timelog_service.get_timelogs(
@@ -74,7 +74,7 @@ def read_timelogs(
 def read_timelog(
     timelog_id: int,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_time_view),
 ):
     db_timelog = timelog_service.get_timelog(db, timelog_id=timelog_id)
     if db_timelog is None:
@@ -93,7 +93,7 @@ def update_timelog(
     timelog_id: int,
     timelog: TimeLogUpdate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_time_view),
 ):
     db_timelog = timelog_service.get_timelog(db, timelog_id=timelog_id)
     if db_timelog is None:

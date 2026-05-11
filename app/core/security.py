@@ -17,14 +17,13 @@ pwd_context    = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _bearer_scheme = HTTPBearer(auto_error=False)
 
 # Replaced hardcoded strings with settings
-ROLE_SUPER_ADMIN     = settings.ROLE_SUPER_ADMIN
 ROLE_ADMIN           = settings.ROLE_ADMIN
 ROLE_TEAM_LEAD       = settings.ROLE_TEAM_LEAD
 ROLE_EMPLOYEE        = settings.ROLE_EMPLOYEE
 
-FULL_ACCESS_ROLES     = [ROLE_SUPER_ADMIN, ROLE_ADMIN]
-TEAM_LEAD_PLUS_ROLES  = [ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_TEAM_LEAD]
-ALL_ROLES             = [ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_TEAM_LEAD, ROLE_EMPLOYEE]
+FULL_ACCESS_ROLES     = [ROLE_ADMIN]
+TEAM_LEAD_PLUS_ROLES  = [ROLE_ADMIN, ROLE_TEAM_LEAD]
+ALL_ROLES             = [ROLE_ADMIN, ROLE_TEAM_LEAD, ROLE_EMPLOYEE]
 
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
@@ -100,27 +99,56 @@ def is_employee_only(user) -> bool:
     return get_user_role_name(user) == ROLE_EMPLOYEE
 
 class RoleChecker:
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: List[str], required_permission: str = None):
         self.allowed_roles = allowed_roles
+        self.required_permission = required_permission
 
     def __call__(self, current_user=Depends(get_current_user)):
+        if current_user.role and current_user.role.name == ROLE_ADMIN:
+            return current_user
+            
+        if self.required_permission and current_user.role and current_user.role.permissions:
+            if current_user.role.permissions.get(self.required_permission) is True:
+                return current_user
+
         if current_user.role and current_user.role.name in self.allowed_roles:
             return current_user
+            
+        msg = f"Access denied. Requires one of: {', '.join(self.allowed_roles)}"
+        if self.required_permission:
+            msg += f" or permission: {self.required_permission}"
+            
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. Requires one of: {', '.join(self.allowed_roles)}",
+            detail=msg,
         )
 
 allow_pm             = RoleChecker(FULL_ACCESS_ROLES)
 allow_team_lead_plus = RoleChecker(TEAM_LEAD_PLUS_ROLES)
 allow_all_roles      = RoleChecker(ALL_ROLES)
+allow_proj_create    = RoleChecker(FULL_ACCESS_ROLES, "proj-create")
+allow_proj_view      = RoleChecker(ALL_ROLES, "proj-view")
+allow_task_create    = RoleChecker(TEAM_LEAD_PLUS_ROLES, "task-create")
+allow_task_view      = RoleChecker(ALL_ROLES, "task-view")
+allow_issue_create   = RoleChecker(TEAM_LEAD_PLUS_ROLES, "issue-create")
+allow_issue_view     = RoleChecker(ALL_ROLES, "issue-view")
+allow_issue_delete   = RoleChecker(TEAM_LEAD_PLUS_ROLES, "issue-delete")
+allow_task_delete    = RoleChecker(TEAM_LEAD_PLUS_ROLES, "task-delete")
+allow_proj_delete    = RoleChecker(FULL_ACCESS_ROLES, "proj-delete")
+allow_time_create    = RoleChecker(ALL_ROLES, "time-create")
+allow_time_view      = RoleChecker(ALL_ROLES, "time-view")
+allow_role_manage    = RoleChecker(FULL_ACCESS_ROLES, "role-manage")
+allow_milestone_create = RoleChecker(TEAM_LEAD_PLUS_ROLES, "milestone-create")
+allow_milestone_view   = RoleChecker(ALL_ROLES, "milestone-view")
+allow_milestone_edit   = RoleChecker(TEAM_LEAD_PLUS_ROLES, "milestone-edit")
 
 def allow_authenticated(current_user=Depends(get_current_user)):
     return current_user
 
 class CheckProjectOwner:
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: List[str], required_permission: str = None):
         self.allowed_roles = allowed_roles
+        self.required_permission = required_permission
 
     def __call__(
         self,
@@ -128,25 +156,37 @@ class CheckProjectOwner:
         current_user=Depends(get_current_user),
         db: Session = Depends(get_sync_db),
     ):
+        if current_user.role and current_user.role.name == ROLE_ADMIN:
+            return current_user
+
         from app.models.project import Project
 
         result   = db.execute(select(Project.owner_id).where(Project.id == project_id))
         owner_id = result.scalar_one_or_none()
-
         if owner_id is not None and owner_id == current_user.id:
             return current_user
+
+        if self.required_permission and current_user.role and current_user.role.permissions:
+            if current_user.role.permissions.get(self.required_permission) is True:
+                return current_user
+
 
         if current_user.role and current_user.role.name in self.allowed_roles:
             return current_user
 
+        msg = f"Access denied. Requires project ownership or one of: {', '.join(self.allowed_roles)}"
+        if self.required_permission:
+            msg += f" or permission: {self.required_permission}"
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. Requires project ownership or one of: {', '.join(self.allowed_roles)}",
+            detail=msg,
         )
 
 class CheckTaskOwner:
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: List[str], required_permission: str = None):
         self.allowed_roles = allowed_roles
+        self.required_permission = required_permission
         
     def __call__(
         self,
@@ -154,6 +194,9 @@ class CheckTaskOwner:
         current_user=Depends(get_current_user),
         db: Session = Depends(get_sync_db),
     ):
+        if current_user.role and current_user.role.name == ROLE_ADMIN:
+            return current_user
+
         from app.models.task import Task
         from app.models.project import Project
         
@@ -172,17 +215,26 @@ class CheckTaskOwner:
             return current_user
         if assignee_id is not None and assignee_id == current_user.id:
             return current_user
+
+        if self.required_permission and current_user.role and current_user.role.permissions:
+            if current_user.role.permissions.get(self.required_permission) is True:
+                return current_user
+
         if current_user.role and current_user.role.name in self.allowed_roles:
             return current_user
 
+        msg = f"Access denied. Requires assignee, project ownership or one of: {', '.join(self.allowed_roles)}"
+        if self.required_permission:
+            msg += f" or permission: {self.required_permission}"
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. Requires assignee, project ownership or one of: {', '.join(self.allowed_roles)}",
+            detail=msg,
         )
 
-check_project_owner_or_pm       = CheckProjectOwner(FULL_ACCESS_ROLES)
-check_project_owner_or_lead     = CheckProjectOwner(TEAM_LEAD_PLUS_ROLES)
-check_task_owner_or_lead        = CheckTaskOwner(TEAM_LEAD_PLUS_ROLES)
+check_project_owner_or_pm       = CheckProjectOwner(FULL_ACCESS_ROLES, "proj-edit")
+check_project_owner_or_lead     = CheckProjectOwner(TEAM_LEAD_PLUS_ROLES, "proj-edit")
+check_task_owner_or_lead        = CheckTaskOwner(TEAM_LEAD_PLUS_ROLES, "task-edit")
 
 class ProjectRoleChecker:
     def __init__(self, allowed_roles: List[str]):
@@ -222,6 +274,5 @@ class ProjectRoleChecker:
             detail=f"Requires project-specific role: {', '.join(self.allowed_roles)}",
         )
 
-# Use settings for profiles
 allow_project_lead   = ProjectRoleChecker([settings.PROFILE_PROJECT_LEAD])
 allow_project_member = ProjectRoleChecker([settings.PROFILE_PROJECT_LEAD, settings.PROFILE_DEVELOPER, settings.PROFILE_MEMBER])

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_sync_db
-from app.core.security import allow_authenticated
+from app.core.security import allow_authenticated, allow_role_manage
 from app.schemas.masters import MasterResponse, RoleResponse, SkillResponse, RoleCreate, RoleUpdate, MasterLookupResponse, BulkRolePermissionsUpdate
 from app.schemas.user import RoleWithUsersResponse
 from app.services import master_service
@@ -140,22 +140,22 @@ def read_role(role_id: int, db: Session = Depends(get_sync_db)):
     return db_role
 
 @router.post("/roles", response_model=RoleResponse)
-def create_role(role: RoleCreate, db: Session = Depends(get_sync_db)):
+def create_role(role: RoleCreate, db: Session = Depends(get_sync_db), current_user=Depends(allow_role_manage)):
     return master_service.create_role(db, role.model_dump())
 
 @router.put("/roles/{role_id}", response_model=RoleResponse)
-def update_role(role_id: int, role: RoleUpdate, db: Session = Depends(get_sync_db)):
+def update_role(role_id: int, role: RoleUpdate, db: Session = Depends(get_sync_db), current_user=Depends(allow_role_manage)):
     return master_service.update_role(db, role_id, role.model_dump(exclude_unset=True))
 
 @router.delete("/roles/{role_id}")
-def delete_role(role_id: int, db: Session = Depends(get_sync_db)):
+def delete_role(role_id: int, db: Session = Depends(get_sync_db), current_user=Depends(allow_role_manage)):
     success = master_service.delete_role(db, role_id)
     if not success:
         raise HTTPException(status_code=404, detail="Role not found")
     return {"message": "Role deleted successfully"}
 
 @router.post("/roles/bulk-permissions")
-def update_bulk_role_permissions(update_data: BulkRolePermissionsUpdate, db: Session = Depends(get_sync_db)):
+def update_bulk_role_permissions(update_data: BulkRolePermissionsUpdate, db: Session = Depends(get_sync_db), current_user=Depends(allow_role_manage)):
     try:
         master_service.update_bulk_role_permissions(db, update_data.role_permissions)
         return {"message": "Permissions updated successfully for all roles"}

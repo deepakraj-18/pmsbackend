@@ -9,6 +9,9 @@ from app.core.database import get_sync_db
 from app.core.security import (
     allow_authenticated,
     allow_team_lead_plus,
+    allow_task_create,
+    allow_task_view,
+    allow_task_delete,
     check_task_owner_or_lead,
     is_employee_only,
 )
@@ -22,7 +25,7 @@ router = APIRouter(dependencies=[Depends(allow_authenticated)])
 def create_task(
     task: TaskCreate,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_team_lead_plus),
+    current_user=Depends(allow_task_create),
 ):
     return task_service.create_task(
         db=db,
@@ -70,7 +73,7 @@ def read_tasks(
     status: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
     db: Session = Depends(get_sync_db),
-    current_user=Depends(allow_authenticated),
+    current_user=Depends(allow_task_view),
 ):
 
     if is_employee_only(current_user):
@@ -127,7 +130,7 @@ def update_task(
 def delete_task(
     task_id: int,
     db: Session = Depends(get_sync_db),
-    current_user=Depends(check_task_owner_or_lead),
+    current_user=Depends(allow_task_delete),
 ):
     success = task_service.delete_task(
         db,
