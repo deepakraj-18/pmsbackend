@@ -126,7 +126,6 @@ def get_projects(
     status_ids: Optional[List[int]] = None,
     priority_ids: Optional[List[int]] = None,
     manager_emails: Optional[List[str]] = None,
-    member_email: Optional[str] = None,
     is_archived: Optional[bool] = None,
     is_template: Optional[bool] = None,
     include_all: bool = False,
@@ -152,36 +151,11 @@ def get_projects(
     if priority_ids:
         stmt = stmt.where(Project.priority_id.in_(priority_ids))
 
-    if member_email:
-        from sqlalchemy import or_, exists
-        from app.models.task import Task, task_assignees
-        from app.models.issue import Issue, issue_assignees
-        
-        # Filter for a specific user's projects
-        user_obj = db.execute(select(User).where(User.email == member_email)).scalar_one_or_none()
-        if user_obj:
-            uid = user_obj.id
-            stmt = stmt.outerjoin(ProjectMember, ProjectMember.project_id == Project.id).where(
-                or_(
-                    ProjectMember.user_id == uid,
-                    Project.owner_id == uid,
-                    Project.tasks.any(Task.assignee_id == uid),
-                    Project.tasks.any(Task.assignees.any(User.id == uid)),
-                    Project.issues.any(Issue.assignee_id == uid),
-                    Project.issues.any(Issue.assignees.any(User.id == uid))
-                )
-            )
-
     if current_user is not None:
         from sqlalchemy import or_, exists
         from app.models.task import Task, task_assignees
         from app.models.issue import Issue, issue_assignees
 
-        # User can see project if:
-        # 1. They are a member
-        # 2. They are the owner
-        # 3. They are assigned to a task (primary or co-assignee)
-        # 4. They are assigned to an issue (primary or co-assignee)
         
         stmt = stmt.outerjoin(ProjectMember, ProjectMember.project_id == Project.id).where(
             or_(
@@ -206,11 +180,8 @@ def get_projects(
             stmt.join(User, Project.project_manager_id == User.id)
             .where(User.email.in_(manager_emails))
         )
-
-    # Count before adding pagination and eager loading
     total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
     
-    # Add eager loading and pagination
     stmt = stmt.options(*_project_query_options()).offset(skip).limit(limit)
     
     result = db.execute(stmt)

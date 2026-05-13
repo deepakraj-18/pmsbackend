@@ -48,16 +48,11 @@ def get_issues(
     severity_ids: Optional[List[int]] = None,
     assignee_emails: Optional[List[str]] = None,
     search: Optional[str] = None,
-    milestone_id: Optional[int] = None,
 ) -> dict:
-
     stmt = _issue_query()
 
     if project_id is not None:
         stmt = stmt.where(Issue.project_id == project_id)
-    if milestone_id is not None:
-        stmt = stmt.where(Issue.milestone_id == milestone_id)
-
 
     if status_ids:
         stmt = stmt.where(Issue.status_id.in_(status_ids))
@@ -88,8 +83,6 @@ def get_issues(
     total = (db.execute(count_stmt)).scalar() or 0
     items_result = db.execute(stmt.offset(skip).limit(limit))
     items = items_result.scalars().unique().all()
-
-    # To get accurate stats for the WHOLE filtered set, we need to query the base statement without offset/limit
     base_filtered_stmt = stmt.subquery()
     
     stats_query = select(
@@ -103,11 +96,6 @@ def get_issues(
     
     stats_res = db.execute(stats_query).all()
     stats_map = {str(cat).lower() if cat else 'open': count for cat, count in stats_res}
-    
-    # Map categories to our UI buckets
-    # Open buckets: open, (null)
-    # In Progress: in_progress, in_review, to_be_tested
-    # Closed: closed, cancelled, done
     
     final_stats = {
         "open": stats_map.get('open', 0),

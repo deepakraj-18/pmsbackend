@@ -149,7 +149,6 @@ def read_projects(
     status_id: Optional[List[int]] = Query(None),
     priority_id: Optional[List[int]] = Query(None),
     manager_emails: Optional[List[str]] = Query(None),
-    member_email: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     db: Session = Depends(get_sync_db),
     current_user=Depends(allow_proj_view),
@@ -161,7 +160,6 @@ def read_projects(
         status_ids=status_id,
         priority_ids=priority_id,
         manager_emails=manager_emails,
-        member_email=member_email,
         is_archived=is_archived,
         is_template=is_template,
         include_all=include_all,
@@ -185,7 +183,6 @@ def read_project(
         member_ids = {m.user_id for m in db_project.team_members}
         is_owner = db_project.owner_id == current_user.id
         
-        # Check if assigned to any task
         is_task_assignee = db.execute(
             select(Task.id).where(
                 Task.project_id == project_id,
@@ -196,7 +193,6 @@ def read_project(
             )
         ).first() is not None
 
-        # Check if assigned to any issue
         is_issue_assignee = db.execute(
             select(Issue.id).where(
                 Issue.project_id == project_id,
