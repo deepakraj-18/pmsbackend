@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.core.config import settings
 from app.core.database import engine, Base
@@ -53,16 +52,6 @@ app = FastAPI(
 
 add_exception_handlers(app)
 
-app.add_middleware(GZipMiddleware, minimum_size=settings.GZIP_MINIMUM_SIZE)
-
-if IS_PRODUCTION:
-    app.add_middleware(HTTPSRedirectMiddleware)
-
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.ALLOWED_HOSTS,
-)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
@@ -82,21 +71,12 @@ app.add_middleware(
     max_age=600,
 )
 
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=settings.PROXY_TRUSTED_HOSTS)
+app.add_middleware(GZipMiddleware, minimum_size=settings.GZIP_MINIMUM_SIZE)
 
-class ForceHTTPSMiddleware:
-    def __init__(self, app):
-        self.app = app
-    async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
-            headers = dict(scope.get("headers", []))
-            if b"x-forwarded-proto" in headers:
-                scope["scheme"] = headers[b"x-forwarded-proto"].decode("latin1").strip()
-            elif IS_PRODUCTION:
-                scope["scheme"] = "https"
-        return await self.app(scope, receive, send)
-
-app.add_middleware(ForceHTTPSMiddleware)
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.ALLOWED_HOSTS,
+)
 
 app.mount(f"/{settings.UPLOAD_DIR}", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
