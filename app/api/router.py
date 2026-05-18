@@ -3,7 +3,7 @@ from app.api.endpoints import (
     auth, users, teams, masters, projects, tasks, issues,
     timelogs, reports, milestones, task_lists,
     documents, templates,
-    project_groups, search, graph, audit
+    project_groups, search, graph, audit, agent
 )
 
 api_router = APIRouter()
@@ -24,4 +24,5 @@ api_router.include_router(documents.router,     prefix="/documents",      tags=[
 api_router.include_router(reports.router,       prefix="/reports",        tags=["reports"])
 api_router.include_router(project_groups.router,prefix="/project-groups", tags=["project-groups"])
 api_router.include_router(search.router,        prefix="/search",         tags=["search"])
-api_router.include_router(audit.router,         prefix="/audit",          tags=["audit"])
+api_router.include_router(audit.router,          prefix="/audit",          tags=["audit"])
+api_router.include_router(agent.router,          prefix="",                tags=["agent"])
