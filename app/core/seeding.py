@@ -27,7 +27,7 @@ def seed_master_lookups(db: Session):
         "ProjectStatus":      ["Planning", "Active", "In Progress", "On Hold", "Completed", "Closed", "Cancelled"],
         "TaskStatus":         ["Open", "In Progress", "In Review", "Completed", "Cancelled", "On Hold"],
         "TaskPriority":       ["Low", "Medium", "High", "Critical"],
-        "IssueStatus":        ["Open", "Active", "In Progress", "To Be Tested", "In Review", "Re-Opened", "On Hold", "Closed", "Cancelled"],
+        "IssueStatus":        ["Open", "In Progress", "Hold", "Cancelled", "Resolved", "Re-Open", "Not a defect", "Closed"],
         "IssueSeverity":      ["Low", "Medium", "High", "Critical", "Blocker", "Show Stopper"],
         "IssueClassification":["None", "Security", "Crash/Hang", "Data Loss", "Performance", "UI/UX Usability", "Other Bugs", "Feature (New)", "Enhancement"],
         "ProjectType":        ["Internal", "External"],
@@ -63,6 +63,46 @@ def seed_master_lookups(db: Session):
     if deleted_count:
         db.commit()
         logger.info(f"Deduplication: removed {deleted_count} duplicate MasterLookup rows.")
+
+    # Safe Defect Status Migration
+    new_issue_statuses = ["Open", "In Progress", "Hold", "Cancelled", "Resolved", "Re-Open", "Not a defect", "Closed"]
+    new_status_ids = {}
+    for idx, name in enumerate(new_issue_statuses):
+        existing = db.query(MasterLookup).filter(
+            MasterLookup.category == "IssueStatus",
+            MasterLookup.value == name
+        ).first()
+        if not existing:
+            new_status = MasterLookup(category="IssueStatus", label=name, value=name, order_index=idx)
+            db.add(new_status)
+            db.flush()
+            new_status_ids[name] = new_status.id
+        else:
+            new_status_ids[name] = existing.id
+            existing.order_index = idx
+
+    from app.models.issue import Issue
+    existing_lookups = db.query(MasterLookup).filter(MasterLookup.category == "IssueStatus").all()
+    for l in existing_lookups:
+        if l.value not in new_issue_statuses:
+            target_name = None
+            if l.value in ["Active", "In Review"]:
+                target_name = "In Progress"
+            elif l.value == "To Be Tested":
+                target_name = "Resolved"
+            elif l.value == "Re-Opened":
+                target_name = "Re-Open"
+            elif l.value == "On Hold":
+                target_name = "Hold"
+            
+            if target_name and target_name in new_status_ids:
+                target_id = new_status_ids[target_name]
+                db.query(Issue).filter(Issue.status_id == l.id).update(
+                    {Issue.status_id: target_id},
+                    synchronize_session=False
+                )
+            db.delete(l)
+    db.commit()
 
     total_inserted = 0
     total_skipped = 0

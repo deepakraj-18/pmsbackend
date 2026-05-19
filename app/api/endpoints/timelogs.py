@@ -54,6 +54,7 @@ def read_timelogs(
     project_id: Optional[int] = None,
     task_id: Optional[int] = None,
     issue_id: Optional[int] = None,
+    user_id: Optional[List[int]] = Query(None),
     skip: int = 0,
     limit: int = 100,
     current_user=Depends(allow_time_view),
@@ -66,6 +67,7 @@ def read_timelogs(
         project_id=project_id,
         task_id=task_id,
         issue_id=issue_id,
+        user_ids=user_id,
         current_user=current_user if not is_full_access(current_user) else None,
     )
 

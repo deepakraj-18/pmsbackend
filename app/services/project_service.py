@@ -126,6 +126,7 @@ def get_projects(
     status_ids: Optional[List[int]] = None,
     priority_ids: Optional[List[int]] = None,
     manager_emails: Optional[List[str]] = None,
+    member_email: Optional[str] = None,
     is_archived: Optional[bool] = None,
     is_template: Optional[bool] = None,
     include_all: bool = False,
@@ -150,6 +151,14 @@ def get_projects(
         stmt = stmt.where(Project.status_id.in_(status_ids))
     if priority_ids:
         stmt = stmt.where(Project.priority_id.in_(priority_ids))
+
+    if manager_emails:
+        stmt = stmt.where(Project.project_manager_email.in_(manager_emails))
+
+    if member_email:
+        from app.models.project import ProjectMember
+        from app.models.user import User
+        stmt = stmt.join(ProjectMember).join(User).where(User.email == member_email)
 
     if current_user is not None:
         from sqlalchemy import or_, exists
