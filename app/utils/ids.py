@@ -31,21 +31,24 @@ def get_next_sequence_id(db, model_class, project_name: str, project_id: int, se
     initials = get_project_initials(project_name)
     prefix = f"{initials}-{separator}"
     
-    query = db.query(model_class).filter(model_class.public_id.like(f"{prefix}%"))
+    query = db.query(model_class.public_id).filter(model_class.public_id.like(f"{prefix}%"))
     if hasattr(model_class, 'project_id'):
         query = query.filter(model_class.project_id == project_id)
         
-    latest = query.order_by(model_class.id.desc()).first()
+    all_ids = query.all()
     
-    num = 0
-    if latest and getattr(latest, "public_id", None):
-        val = latest.public_id.replace(prefix, "")
-        try:
-            num = int(val)
-        except ValueError:
-            pass
-            
-    num += 1
+    max_num = 0
+    for (pid,) in all_ids:
+        if pid:
+            val = pid.replace(prefix, "")
+            try:
+                n = int(val)
+                if n > max_num:
+                    max_num = n
+            except ValueError:
+                pass
+                
+    num = max_num + 1
     if is_padded:
         return f"{prefix}{num:03d}"
     return f"{prefix}{num}"
