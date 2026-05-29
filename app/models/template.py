@@ -18,7 +18,7 @@ class ProjectTemplate(AuditMixin, Base):
 
     created_by_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("users.id"),
         nullable=True,
     )
 
@@ -38,7 +38,7 @@ class TemplateTask(Base):
     id              = Column(Integer, primary_key=True, index=True)
     template_id     = Column(
         Integer,
-        ForeignKey("project_templates.id", ondelete="CASCADE"),
+        ForeignKey("project_templates.id"),
         nullable=False,
         index=True,
     )

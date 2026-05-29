@@ -16,15 +16,15 @@ from app.core.database import Base, AuditMixin
 task_owners = Table(
     "task_owners",
     Base.metadata,
-    Column("task_id", Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("task_id", Integer, ForeignKey("tasks.id"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
 )
 
 task_assignees = Table(
     "task_assignees",
     Base.metadata,
-    Column("task_id", Integer, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("task_id", Integer, ForeignKey("tasks.id"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
 )
 
 class Task(AuditMixin, Base):
@@ -36,14 +36,14 @@ class Task(AuditMixin, Base):
     task_name: Mapped[str] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    project_id: Mapped[Optional[int]]    = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=True)
-    task_list_id: Mapped[Optional[int]]  = mapped_column(ForeignKey("task_lists.id", ondelete="SET NULL"), nullable=True)
-    milestone_id: Mapped[Optional[int]]  = mapped_column(ForeignKey("milestones.id", ondelete="SET NULL"), nullable=True)
-    associated_team_id: Mapped[Optional[int]] = mapped_column(ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
+    project_id: Mapped[Optional[int]]    = mapped_column(ForeignKey("projects.id"), nullable=True)
+    task_list_id: Mapped[Optional[int]]  = mapped_column(ForeignKey("task_lists.id"), nullable=True)
+    milestone_id: Mapped[Optional[int]]  = mapped_column(ForeignKey("milestones.id"), nullable=True)
+    associated_team_id: Mapped[Optional[int]] = mapped_column(ForeignKey("teams.id"), nullable=True)
 
-    assignee_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    owner_id: Mapped[Optional[int]]      = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    assignee_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    owner_id: Mapped[Optional[int]]      = mapped_column(ForeignKey("users.id"), nullable=True)
 
     status_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
     priority_id: Mapped[Optional[int]] = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
@@ -65,7 +65,7 @@ class Task(AuditMixin, Base):
 
     is_processed: Mapped[bool] = mapped_column(Boolean, default=False)
     previous_status_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("master_lookups.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("master_lookups.id"), nullable=True
     )
 
 

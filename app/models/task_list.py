@@ -6,8 +6,8 @@ class TaskList(AuditMixin, Base):
     __tablename__ = "task_lists"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    milestone_id = Column(Integer, ForeignKey("milestones.id", ondelete="SET NULL"), nullable=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    milestone_id = Column(Integer, ForeignKey("milestones.id"), nullable=True)
     name = Column(String(255), index=True, nullable=False)
     description = Column(Text, nullable=True)
 

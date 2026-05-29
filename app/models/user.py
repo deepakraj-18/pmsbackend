@@ -3,15 +3,15 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.core.config import settings
-from app.core.database import Base, AuditMixin
+from app.core.database import Base, AuditMixin, utcnow
 
 user_team_link = Table(
     "user_team_link",
     Base.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-    Column("team_id", Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False),
-    Column("created_at", DateTime(timezone=False), default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), server_default=func.utc_timestamp(), nullable=False),
+    Column("user_id", Integer, ForeignKey("users.id"), nullable=False),
+    Column("team_id", Integer, ForeignKey("teams.id"), nullable=False),
+    Column("created_at", DateTime(timezone=False), default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), server_default=utcnow(), nullable=False),
     Column("updated_at", DateTime(timezone=False), default=None, onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=True),
     Column("is_active", Boolean, default=True, nullable=False),
     Column("is_deleted", Boolean, default=False, nullable=False),
@@ -20,9 +20,9 @@ user_team_link = Table(
 user_skill_link = Table(
     "user_skill_link",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("skill_id", Integer, ForeignKey("skills.id", ondelete="CASCADE"), primary_key=True),
-    Column("created_at", DateTime(timezone=False), default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), server_default=func.utc_timestamp(), nullable=False),
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("skill_id", Integer, ForeignKey("skills.id"), primary_key=True),
+    Column("created_at", DateTime(timezone=False), default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), server_default=utcnow(), nullable=False),
     Column("updated_at", DateTime(timezone=False), default=None, onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=True),
     Column("is_active", Boolean, default=True, nullable=False),
     Column("is_deleted", Boolean, default=False, nullable=False)
@@ -41,7 +41,7 @@ class User(AuditMixin, Base):
     username = Column(String(100), unique=True, index=True, nullable=False)
     phone = Column(String(20), nullable=True)
     job_title = Column(String(100), nullable=True)
-    join_date = Column(Date, default=func.current_date(), nullable=True)
+    join_date = Column(Date, default=lambda: datetime.now(timezone.utc).date(), nullable=True)
 
     password_hash = Column(String(255), nullable=True)
 
@@ -56,10 +56,10 @@ class User(AuditMixin, Base):
     is_synced = Column(Boolean, default=False)
     is_external = Column(Boolean, default=False)
 
-    role_id = Column(Integer, ForeignKey("roles.id", ondelete="SET NULL"), nullable=True)
-    status_id = Column(Integer, ForeignKey("user_statuses.id", ondelete="SET NULL"), nullable=True)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
+    status_id = Column(Integer, ForeignKey("user_statuses.id"), nullable=True)
 
-    manager_email = Column(String(255), ForeignKey("users.email", ondelete="SET NULL"), nullable=True)
+    manager_email = Column(String(255), ForeignKey("users.email"), nullable=True)
 
     role = relationship("Role", lazy="joined")
     status = relationship("UserStatus", lazy="joined")

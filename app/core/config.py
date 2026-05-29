@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "TechnoRUCS PMS"
+    PROJECT_NAME: str = "TechSpear PMS"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
@@ -16,28 +16,62 @@ class Settings(BaseSettings):
     ENABLE_DB_CREATE: bool = True
     LOG_LEVEL: str = "INFO"
 
-    DB_USER: str = Field(default="root")
+    DB_USER: str = Field(default="sa")
     DB_PASSWORD: str = Field(default="")
     DB_SERVER: str = Field(default="localhost")
-    DB_PORT: str = Field(default="3306")
+    # Leave DB_PORT empty to omit the port, e.g. for a named instance
+    # ("HOST\\INSTANCE") or a local default instance reached over shared memory.
+    DB_PORT: str = Field(default="1433")
     DB_NAME: str = Field(default="trucsProjects")
+    DB_DRIVER: str = Field(default="ODBC Driver 18 for SQL Server")
+    # Use Windows / integrated authentication instead of a SQL login. When true,
+    # DB_USER / DB_PASSWORD are ignored and Trusted_Connection=yes is sent.
+    DB_TRUSTED_CONNECTION: bool = Field(default=False)
+    # Encrypt the connection (Azure SQL requires it). TrustServerCertificate=yes
+    # lets local/self-signed servers connect without installing the server cert.
+    DB_ENCRYPT: bool = Field(default=True)
+    DB_TRUST_SERVER_CERTIFICATE: bool = Field(default=True)
     DB_ECHO: bool = Field(default=False)
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 30
     DB_POOL_RECYCLE: int = 280
     DB_POOL_TIMEOUT: int = 20
 
+    def _odbc_query(self) -> str:
+        from urllib.parse import urlencode
+        params = {
+            "driver": self.DB_DRIVER,
+            "Encrypt": "yes" if self.DB_ENCRYPT else "no",
+            "TrustServerCertificate": "yes" if self.DB_TRUST_SERVER_CERTIFICATE else "no",
+        }
+        if self.DB_TRUSTED_CONNECTION:
+            params["Trusted_Connection"] = "yes"
+        return urlencode(params)
+
+    def _host(self) -> str:
+        # Append the port only when one is configured; a named instance or a
+        # local default instance over shared memory must omit it.
+        return f"{self.DB_SERVER}:{self.DB_PORT}" if self.DB_PORT else self.DB_SERVER
+
+    def _credentials(self) -> str:
+        from urllib.parse import quote_plus
+        if self.DB_TRUSTED_CONNECTION:
+            return ""  # integrated auth: no userinfo in the URL
+        return f"{self.DB_USER}:{quote_plus(self.DB_PASSWORD)}@"
+
+    def _build_url(self, driver_scheme: str) -> str:
+        return (
+            f"{driver_scheme}://{self._credentials()}{self._host()}"
+            f"/{self.DB_NAME}?{self._odbc_query()}"
+        )
+
     @property
     def DATABASE_URL(self) -> str:
-        from urllib.parse import quote_plus
-        encoded_password = quote_plus(self.DB_PASSWORD)
-        return f"mysql+pymysql://{self.DB_USER}:{encoded_password}@{self.DB_SERVER}:{self.DB_PORT}/{self.DB_NAME}"
+        return self._build_url("mssql+pyodbc")
 
     @property
     def ASYNC_DATABASE_URL(self) -> str:
-        from urllib.parse import quote_plus
-        encoded_password = quote_plus(self.DB_PASSWORD)
-        return f"mysql+aiomysql://{self.DB_USER}:{encoded_password}@{self.DB_SERVER}:{self.DB_PORT}/{self.DB_NAME}"
+        return self._build_url("mssql+aioodbc")
 
     SECRET_KEY: str = Field(default="7f0ee1c5d225de46bf357e6a")
     ALGORITHM: str = "HS256"

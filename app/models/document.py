@@ -7,8 +7,8 @@ from app.core.database import AuditMixin, Base
 issue_document_link = Table(
     "issue_document_link",
     Base.metadata,
-    Column("issue_id", Integer, ForeignKey("issues.id", ondelete="CASCADE"), primary_key=True),
-    Column("document_id", Integer, ForeignKey("documents.id", ondelete="CASCADE"), primary_key=True),
+    Column("issue_id", Integer, ForeignKey("issues.id"), primary_key=True),
+    Column("document_id", Integer, ForeignKey("documents.id"), primary_key=True),
     Column("created_at", DateTime(timezone=True), default=func.now(), server_default=func.now(), nullable=False),
     Column("updated_at", DateTime(timezone=True), default=None, onupdate=func.now(), nullable=True),
     Column("is_active", Boolean, default=True, nullable=False),
@@ -26,9 +26,9 @@ class Document(AuditMixin, Base):
     file_type = Column(String(100), nullable=True)
     file_size = Column(Integer, nullable=True)
 
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
 
-    uploaded_by_email = Column(String(255), ForeignKey("users.email", ondelete="SET NULL"), nullable=True)
+    uploaded_by_email = Column(String(255), ForeignKey("users.email"), nullable=True)
 
     project = relationship("Project", back_populates="documents")
     uploaded_by = relationship("User", foreign_keys=[uploaded_by_email])

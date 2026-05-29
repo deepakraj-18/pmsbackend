@@ -19,13 +19,13 @@ class TimeLog(AuditMixin, Base):
     public_id: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
     log_title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
-    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=True)
-    task_id: Mapped[Optional[int]]    = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
-    issue_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("issues.id", ondelete="CASCADE"), nullable=True)
-    timesheet_id: Mapped[Optional[int]] = mapped_column(ForeignKey("timesheets.id", ondelete="SET NULL"), nullable=True)
+    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id"), nullable=True)
+    task_id: Mapped[Optional[int]]    = mapped_column(ForeignKey("tasks.id"), nullable=True)
+    issue_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("issues.id"), nullable=True)
+    timesheet_id: Mapped[Optional[int]] = mapped_column(ForeignKey("timesheets.id"), nullable=True)
 
     date: Mapped[date] = mapped_column(Date, nullable=False)
 

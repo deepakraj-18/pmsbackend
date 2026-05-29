@@ -15,15 +15,15 @@ from app.core.database import Base, AuditMixin
 issue_followers = Table(
     "issue_followers",
     Base.metadata,
-    Column("issue_id", Integer, ForeignKey("issues.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    Column("issue_id", Integer, ForeignKey("issues.id"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True)
 )
 
 issue_assignees = Table(
     "issue_assignees",
     Base.metadata,
-    Column("issue_id", Integer, ForeignKey("issues.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    Column("issue_id", Integer, ForeignKey("issues.id"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True)
 )
 
 class Issue(AuditMixin, Base):
@@ -35,12 +35,12 @@ class Issue(AuditMixin, Base):
     bug_name: Mapped[str] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=True)
-    milestone_id: Mapped[Optional[int]] = mapped_column(ForeignKey("milestones.id", ondelete="SET NULL"), nullable=True)
-    associated_team_id: Mapped[Optional[int]] = mapped_column(ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
+    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id"), nullable=True)
+    milestone_id: Mapped[Optional[int]] = mapped_column(ForeignKey("milestones.id"), nullable=True)
+    associated_team_id: Mapped[Optional[int]] = mapped_column(ForeignKey("teams.id"), nullable=True)
 
-    reporter_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    assignee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reporter_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    assignee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     status_id: Mapped[Optional[int]] = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
     priority_id: Mapped[Optional[int]] = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
@@ -65,7 +65,7 @@ class Issue(AuditMixin, Base):
     estimated_hours: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
     is_processed: Mapped[bool] = mapped_column(Boolean, default=False)
     previous_status_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("master_lookups.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("master_lookups.id"), nullable=True
     )
 
 

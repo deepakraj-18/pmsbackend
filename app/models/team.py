@@ -16,7 +16,7 @@ class Team(AuditMixin, Base):
     primary_communication_channel = Column(String(100), nullable=True)
     channel_id = Column(String(100), nullable=True)
 
-    lead_email = Column(String(255), ForeignKey("users.email", ondelete="SET NULL"), nullable=True)
+    lead_email = Column(String(255), ForeignKey("users.email"), nullable=True)
 
     lead = relationship("User", back_populates="managed_teams", foreign_keys=[lead_email])
 

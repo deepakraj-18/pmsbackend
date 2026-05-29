@@ -20,8 +20,8 @@ class Milestone(AuditMixin, Base):
     milestone_name: Mapped[str] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=True)
-    owner_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    project_id: Mapped[Optional[int]] = mapped_column(ForeignKey("projects.id"), nullable=True)
+    owner_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("users.id"), nullable=True)
 
     status_id: Mapped[Optional[int]]   = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
     priority_id: Mapped[Optional[int]] = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
@@ -38,7 +38,7 @@ class Milestone(AuditMixin, Base):
     completion_percentage: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)
     
     is_processed: Mapped[bool] = mapped_column(Boolean, default=False)
-    previous_status_id: Mapped[Optional[int]] = mapped_column(ForeignKey("master_lookups.id", ondelete="SET NULL"), nullable=True)
+    previous_status_id: Mapped[Optional[int]] = mapped_column(ForeignKey("master_lookups.id"), nullable=True)
 
 
     status_master   = relationship("MasterLookup", foreign_keys=[status_id], lazy="selectin")
