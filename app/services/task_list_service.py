@@ -29,7 +29,7 @@ def get_task_lists(
     stmt = _tl_query()
     if project_id:
         stmt = stmt.where(TaskList.project_id == project_id)
-    result = db.execute(stmt.offset(skip).limit(limit))
+    result = db.execute(stmt.order_by(TaskList.id).offset(skip).limit(limit))
     return result.scalars().unique().all()
 
 def create_task_list(

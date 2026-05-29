@@ -20,7 +20,7 @@ def get_team(db: Session, team_id: int) -> Optional[Team]:
     return result.scalar_one_or_none()
 
 def get_teams(db: Session, skip: int = 0, limit: int = 100) -> List[Team]:
-    result = db.execute(_team_query().offset(skip).limit(limit))
+    result = db.execute(_team_query().order_by(Team.id).offset(skip).limit(limit))
     return result.scalars().unique().all()
 
 def search_teams(db: Session, query: str = "", limit: int = 15) -> List[Team]:

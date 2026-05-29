@@ -8,7 +8,7 @@ def get_project_group(db: Session, group_id: int):
     return db.query(ProjectGroup).filter(ProjectGroup.id == group_id).first()
 
 def get_project_groups(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(ProjectGroup).offset(skip).limit(limit).all()
+    return db.query(ProjectGroup).order_by(ProjectGroup.id).offset(skip).limit(limit).all()
 
 def create_project_group(db: Session, group: ProjectGroupCreate, actor_id: Optional[str] = None):
     db_group = ProjectGroup(

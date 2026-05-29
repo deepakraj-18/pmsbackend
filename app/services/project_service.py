@@ -200,7 +200,7 @@ def get_projects(
         )
     total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
     
-    stmt = stmt.options(*_project_query_options()).offset(skip).limit(limit)
+    stmt = stmt.options(*_project_query_options()).order_by(Project.id).offset(skip).limit(limit)
     
     result = db.execute(stmt)
     projects = list(result.scalars().unique().all())

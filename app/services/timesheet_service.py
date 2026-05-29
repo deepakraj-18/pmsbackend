@@ -10,7 +10,7 @@ def get_timesheets(db: Session, skip: int = 0, limit: int = 100, project_id: int
         query = query.filter(Timesheet.project_id == project_id)
     if user_email:
         query = query.filter(Timesheet.user_email == user_email)
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(Timesheet.id).offset(skip).limit(limit).all()
 
 def get_timesheet(db: Session, timesheet_id: int):
     return db.query(Timesheet).filter(Timesheet.id == timesheet_id).first()

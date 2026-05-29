@@ -61,7 +61,7 @@ def get_users(
 
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (db.execute(count_stmt)).scalar() or 0
-    data = (db.execute(stmt.offset(skip).limit(limit))).scalars().unique().all()
+    data = (db.execute(stmt.order_by(User.id).offset(skip).limit(limit))).scalars().unique().all()
     return {"total": total, "data": data}
 
 def create_user(

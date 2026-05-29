@@ -60,7 +60,7 @@ def get_timelogs(
     if current_user is not None:
         stmt = stmt.where(TimeLog.user_id == current_user.id)
 
-    result = db.execute(stmt.offset(skip).limit(limit))
+    result = db.execute(stmt.order_by(TimeLog.id).offset(skip).limit(limit))
     return result.scalars().unique().all()
 
 

@@ -85,7 +85,7 @@ def get_tasks(
 
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (db.execute(count_stmt)).scalar() or 0
-    items_result = db.execute(stmt.offset(skip).limit(limit))
+    items_result = db.execute(stmt.order_by(Task.id).offset(skip).limit(limit))
     return {"total": total, "items": items_result.scalars().unique().all()}
 
 

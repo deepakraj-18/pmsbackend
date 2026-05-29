@@ -86,7 +86,7 @@ def get_issues(
     from app.models.master import MasterLookup
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (db.execute(count_stmt)).scalar() or 0
-    items_result = db.execute(stmt.offset(skip).limit(limit))
+    items_result = db.execute(stmt.order_by(Issue.id).offset(skip).limit(limit))
     items = items_result.scalars().unique().all()
 
     # Compute status stats — group by the label (e.g. "Open", "In Progress")

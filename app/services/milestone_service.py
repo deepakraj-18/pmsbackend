@@ -101,7 +101,7 @@ def get_milestones(
     stmt = _milestone_query()
     if project_id:
         stmt = stmt.where(Milestone.project_id == project_id)
-    result = db.execute(stmt.offset(skip).limit(limit))
+    result = db.execute(stmt.order_by(Milestone.id).offset(skip).limit(limit))
     milestones = list(result.scalars().unique().all())
     _batch_enrich_milestones(db, milestones)
     return milestones
