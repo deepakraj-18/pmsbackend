@@ -124,7 +124,8 @@ class Settings(BaseSettings):
     AZURE_STORAGE_CONTAINER_NAME: Optional[str] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # Selectable env file: run with `ENV_FILE=.env.dev` to load that file.
+        env_file=os.getenv("ENV_FILE", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,
