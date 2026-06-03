@@ -1,7 +1,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+# Environment files with secrets — ignore all, keep the committed template
 .env
+.env.*
+!.env.example
 venv/
 .venv/
 uploads/
