@@ -9,7 +9,7 @@ your normal .env. Source (MySQL) connection comes from MYSQL_* env vars:
 
     MYSQL_HOST      (default: localhost)
     MYSQL_PORT      (default: 3306)
-    MYSQL_DB        (default: trucsprojects)
+    MYSQL_DB        (default: techspearprojects)
     MYSQL_USER      (default: root)
     MYSQL_PASSWORD  (required)
 
@@ -42,7 +42,7 @@ def source_url() -> str:
     user = os.environ.get("MYSQL_USER", "root")
     host = os.environ.get("MYSQL_HOST", "localhost")
     port = os.environ.get("MYSQL_PORT", "3306")
-    db = os.environ.get("MYSQL_DB", "trucsprojects")
+    db = os.environ.get("MYSQL_DB", "techspearprojects")
     return f"mysql+pymysql://{user}:{quote_plus(pwd)}@{host}:{port}/{db}"
 
 

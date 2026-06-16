@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # Leave DB_PORT empty to omit the port, e.g. for a named instance
     # ("HOST\\INSTANCE") or a local default instance reached over shared memory.
     DB_PORT: str = Field(default="1433")
-    DB_NAME: str = Field(default="trucsProjects")
+    DB_NAME: str = Field(default="techspear")
     DB_DRIVER: str = Field(default="ODBC Driver 18 for SQL Server")
     # Use Windows / integrated authentication instead of a SQL login. When true,
     # DB_USER / DB_PASSWORD are ignored and Trusted_Connection=yes is sent.
