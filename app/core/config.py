@@ -124,7 +124,7 @@ class Settings(BaseSettings):
     AZURE_STORAGE_CONTAINER_NAME: Optional[str] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=".env.dev",
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,
